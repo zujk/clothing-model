@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Body Measurement Model</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="app-header">
+  <h1>Body Measurement Model</h1>
+  <p class="subtitle">A parametric body model driven by your own tape measurements — for understanding your proportions and buying/thrifting with confidence.</p>
+  <div class="header-controls">
+    <div class="unit-toggle" role="group" aria-label="Units">
+      <button type="button" id="unit-cm" class="unit-btn active" data-unit="cm">cm</button>
+      <button type="button" id="unit-in" class="unit-btn" data-unit="in">in</button>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="btn-export" class="ghost-btn">Export</button>
+      <button type="button" id="btn-import" class="ghost-btn">Import</button>
+      <input type="file" id="file-import" accept="application/json" hidden />
+      <button type="button" id="btn-reset" class="ghost-btn danger">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT: Input form -->
+  <section class="panel form-panel" aria-label="Measurements">
+    <h2>Measurements</h2>
+
+    <fieldset>
+      <legend>Overall</legend>
+      <div class="field"><label for="m-height">Height</label><input type="number" id="m-height" step="0.1" placeholder="e.g. 175"><span class="unit-label"></span></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Upper body</legend>
+      <div class="field"><label for="m-neck">Neck circumference</label><input type="number" id="m-neck" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-shoulder">Shoulder width (point to point)</label><input type="number" id="m-shoulder" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-chest">Chest / bust circumference</label><input type="number" id="m-chest" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-waist">Waist circumference</label><input type="number" id="m-waist" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-torso">Torso length (nape to waist)</label><input type="number" id="m-torso" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-sleeve">Arm / sleeve length (shoulder to wrist)</label><input type="number" id="m-sleeve" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-bicep">Bicep circumference</label><input type="number" id="m-bicep" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-wrist">Wrist circumference</label><input type="number" id="m-wrist" step="0.1"><span class="unit-label"></span></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Lower body</legend>
+      <div class="field"><label for="m-hip">Hip circumference</label><input type="number" id="m-hip" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-rise">Rise (waist to crotch)</label><input type="number" id="m-rise" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-inseam">Inseam (crotch to floor)</label><input type="number" id="m-inseam" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-thigh">Thigh circumference</label><input type="number" id="m-thigh" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-calf">Calf circumference</label><input type="number" id="m-calf" step="0.1"><span class="unit-label"></span></div>
+      <div class="field"><label for="m-ankle">Ankle circumference</label><input type="number" id="m-ankle" step="0.1"><span class="unit-label"></span></div>
+    </fieldset>
+
+    <p class="hint">Values save automatically in this browser. Nothing is sent anywhere.</p>
+  </section>
+
+  <!-- CENTER: Visualization -->
+  <section class="panel viz-panel" aria-label="Body visualization">
+    <h2>Proportion Model <span class="muted">(schematic, not anatomical)</span></h2>
+    <div class="svg-wrap">
+      <svg id="body-svg" viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="scale-note" id="scale-note"></div>
+  </section>
+
+  <!-- RIGHT: Analysis -->
+  <section class="panel analysis-panel" aria-label="Analysis">
+    <h2>Ratios &amp; Shape</h2>
+    <div id="ratios-out" class="cards"></div>
+
+    <h2>Size Estimate <span class="muted">(generic — brands vary)</span></h2>
+    <div id="sizes-out" class="cards"></div>
+  </section>
+
+</main>
+
+<section class="panel fit-panel" aria-label="Garment fit checker">
+  <h2>Garment Fit Checker</h2>
+  <p class="hint">For thrifting: enter the <strong>flat measurements</strong> from a listing (garment laid flat, measured edge to edge) rather than trusting the tag size. Circumference = flat measurement × 2.</p>
+
+  <div class="fit-controls">
+    <div class="field inline">
+      <label for="fit-type">Garment type</label>
+      <select id="fit-type">
+        <option value="top">Top (shirt / jacket)</option>
+        <option value="bottom">Bottom (pants / shorts)</option>
+      </select>
+    </div>
+    <div class="field inline">
+      <label for="fit-ease">Desired fit</label>
+      <select id="fit-ease">
+        <option value="fitted">Fitted (0–5 cm ease)</option>
+        <option value="regular" selected>Regular (5–12 cm ease)</option>
+        <option value="relaxed">Relaxed (12–20 cm ease)</option>
+        <option value="oversized">Oversized (20+ cm ease)</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="fit-fields-top" class="fit-fields">
+    <div class="field"><label for="g-pit">Pit-to-pit (chest flat)</label><input type="number" id="g-pit" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-shoulder">Shoulder to shoulder</label><input type="number" id="g-shoulder" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-length">Length (shoulder to hem)</label><input type="number" id="g-length" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-sleeve">Sleeve length</label><input type="number" id="g-sleeve" step="0.1"><span class="unit-label"></span></div>
+  </div>
+
+  <div id="fit-fields-bottom" class="fit-fields" hidden>
+    <div class="field"><label for="g-waist">Waist flat</label><input type="number" id="g-waist" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-hip">Hip flat (measured ~20cm down)</label><input type="number" id="g-hip" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-rise">Front rise</label><input type="number" id="g-rise" step="0.1"><span class="unit-label"></span></div>
+    <div class="field"><label for="g-inseam">Inseam</label><input type="number" id="g-inseam" step="0.1"><span class="unit-label"></span></div>
+  </div>
+
+  <div id="fit-out" class="cards"></div>
+</section>
+
+<footer class="app-footer">
+  <p>Schematic proportions and generic size charts for personal orientation only — not medical or precision tailoring advice. Always cross-check against a specific brand's own size chart when possible.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

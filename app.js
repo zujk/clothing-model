@@ -260,134 +260,29 @@ function updatePlaceholders() {
 }
 
 /* ---------------------------------------------------------------------
- * SVG figure
+ * 3D body model handoff — geometry itself lives in body3d.js (a module
+ * script, loaded separately); this just packages current measurements
+ * and per-region measured/partial/estimated state and notifies it.
  * ------------------------------------------------------------------- */
-const SVG_NS = "http://www.w3.org/2000/svg";
-const VB_W = 300, VB_H = 620, MARGIN = 20;
-
-function el(tag, attrs) {
-  const node = document.createElementNS(SVG_NS, tag);
-  Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
-  return node;
+function currentBodyStates() {
+  return {
+    torso: segmentState(["neck", "shoulder", "chest", "waist", "hip"]),
+    arms: segmentState(["sleeve", "bicep", "wrist"]),
+    legs: segmentState(["hip", "inseam", "thigh", "calf", "ankle"]),
+  };
 }
 
-function poly(points, cls) {
-  return el("polygon", { points: points.map((p) => p.join(",")).join(" "), class: cls });
+function getCurrentMeasurements() {
+  return { measurements: effectiveMeasurements(), states: currentBodyStates() };
 }
+window.getCurrentMeasurements = getCurrentMeasurements;
 
-function renderBody() {
-  const m = effectiveMeasurements();
-  const cx = VB_W / 2;
-
-  // Circumference -> front-view half-width factor (schematic approximation;
-  // real cross-sections are elliptical, not circular, so this is not C/(2*pi)).
-  const HALF_W = 0.165; // half-width = circumference * 0.165 (~ circumference/6.06)
-
-  const drawableH = VB_H - MARGIN * 2;
-  const headH = 0.13 * m.height;
-  const neckH = 0.03 * m.height;
-  const torsoH = m.torso;
-  const hipSegH = 0.07 * m.height;
-  const legH = m.inseam;
-  const totalCm = headH + neckH + torsoH + hipSegH + legH;
-  const px = drawableH / totalCm;
-
-  let y = MARGIN;
-  const yHeadTop = y;
-  y += headH * px;
-  const yHeadBottom = y;
-  y += neckH * px;
-  const yShoulder = y;
-  const yChest = yShoulder + torsoH * px * 0.32;
-  y += torsoH * px;
-  const yWaist = y;
-  y += hipSegH * px;
-  const yHip = y;
-  const yCalf = yHip + legH * px * 0.62;
-  const yFloor = yHip + legH * px;
-
-  const shoulderW = m.shoulder * px;
-  const chestW = m.chest * HALF_W * 2 * px;
-  const waistW = m.waist * HALF_W * 2 * px;
-  const hipW = m.hip * HALF_W * 2 * px;
-  const neckW = m.neck * HALF_W * 2 * px;
-  const bicepW = m.bicep * HALF_W * 2.1 * px;
-  const wristW = m.wrist * HALF_W * 2.1 * px;
-  const thighW = m.thigh * HALF_W * 2.1 * px;
-  const calfW = m.calf * HALF_W * 2.1 * px;
-  const ankleW = m.ankle * HALF_W * 2.1 * px;
-  const headR = headH * px * 0.42;
-
-  const svg = document.getElementById("body-svg");
-  svg.innerHTML = "";
-  svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
-
-  const legsState = segmentState(["hip", "inseam", "thigh", "calf", "ankle"]);
-  const armsState = segmentState(["sleeve", "bicep", "wrist"]);
-  const torsoState = segmentState(["shoulder", "chest", "waist", "hip"]);
-  const neckState = segmentState(["neck"]);
-
-  // guide: floor line
-  svg.appendChild(el("line", { x1: MARGIN, y1: yFloor, x2: VB_W - MARGIN, y2: yFloor, class: "body-guide" }));
-
-  // legs (draw first, behind torso)
-  const legCenterOffset = hipW / 4;
-  [-1, 1].forEach((side) => {
-    const cxLeg = cx + side * legCenterOffset;
-    const pts = [
-      [cxLeg - thighW / 2 * (side < 0 ? 1 : 0.15), yHip],
-      [cxLeg + thighW / 2 * (side < 0 ? 0.15 : 1), yHip],
-      [cxLeg + calfW / 2 * (side < 0 ? 0.15 : 1), yCalf],
-      [cxLeg + ankleW / 2 * (side < 0 ? 0.15 : 1), yFloor],
-      [cxLeg - ankleW / 2 * (side < 0 ? 1 : 0.15), yFloor],
-      [cxLeg - calfW / 2 * (side < 0 ? 1 : 0.15), yCalf],
-    ];
-    svg.appendChild(poly(pts, `body-shape secondary state-${legsState}`));
-  });
-
-  // arms
-  const armLenPx = m.sleeve * px;
-  const drift = armLenPx * 0.14;
-  [-1, 1].forEach((side) => {
-    const shoulderX = cx + side * shoulderW / 2;
-    const pts = [
-      [shoulderX - bicepW / 2, yShoulder],
-      [shoulderX + bicepW / 2, yShoulder],
-      [shoulderX + side * drift + wristW / 2, yShoulder + armLenPx],
-      [shoulderX + side * drift - wristW / 2, yShoulder + armLenPx],
-    ];
-    svg.appendChild(poly(pts, `body-shape secondary state-${armsState}`));
-  });
-
-  // torso
-  const torsoPts = [
-    [cx - shoulderW / 2, yShoulder],
-    [cx - chestW / 2, yChest],
-    [cx - waistW / 2, yWaist],
-    [cx - hipW / 2, yHip],
-    [cx + hipW / 2, yHip],
-    [cx + waistW / 2, yWaist],
-    [cx + chestW / 2, yChest],
-    [cx + shoulderW / 2, yShoulder],
-  ];
-  svg.appendChild(poly(torsoPts, `body-shape state-${torsoState}`));
-
-  // neck
-  svg.appendChild(poly([
-    [cx - neckW / 2, yHeadBottom],
-    [cx + neckW / 2, yHeadBottom],
-    [cx + shoulderW * 0.18, yShoulder],
-    [cx - shoulderW * 0.18, yShoulder],
-  ], `body-shape state-${neckState}`));
-
-  // head
-  svg.appendChild(el("circle", {
-    cx, cy: (yHeadTop + yHeadBottom) / 2, r: Math.max(headR, 10), class: "body-shape",
-  }));
+function notifyBody3D() {
+  window.dispatchEvent(new CustomEvent("measurements-changed", { detail: getCurrentMeasurements() }));
 
   const measuredCount = FIELDS.filter((f) => f.key !== "height" && state.measurements[f.key] != null).length;
   document.getElementById("scale-note").textContent =
-    `Figure height ≈ ${fmt(totalCm)} · ${measuredCount}/${FIELDS.length - 1} measurements entered — the rest are filled with average-proportion estimates and update instantly as you add real numbers.`;
+    `${measuredCount}/${FIELDS.length - 1} measurements entered — the rest are filled with average-proportion estimates and update instantly as you add real numbers.`;
 }
 
 /* ---------------------------------------------------------------------
@@ -659,7 +554,7 @@ function renderFitChecker() {
  * ------------------------------------------------------------------- */
 function renderAll() {
   updatePlaceholders();
-  renderBody();
+  notifyBody3D();
   renderRatios();
   renderSizes();
   renderFitChecker();

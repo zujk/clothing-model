@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Body Measurement Model</title>
 <link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js",
+    "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"
+  }
+}
+</script>
 </head>
 <body>
 <header class="app-header">
@@ -62,14 +70,15 @@
 
   <!-- CENTER: Visualization -->
   <section class="panel viz-panel" aria-label="Body visualization">
-    <h2>Proportion Model <span class="muted">(schematic, not anatomical)</span></h2>
-    <div class="svg-wrap">
-      <svg id="body-svg" viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg"></svg>
+    <h2>3D Proportion Model <span class="muted">(anatomical, parametric)</span></h2>
+    <div class="body3d-wrap">
+      <div id="body3d-container"></div>
     </div>
+    <div class="body3d-hint">Drag to rotate · scroll / pinch to zoom</div>
     <div class="body-legend">
-      <span class="swatch"><span class="swatch-line"></span> Measured</span>
-      <span class="swatch"><span class="swatch-line partial"></span> Partially measured</span>
-      <span class="swatch"><span class="swatch-line estimated"></span> Estimated (average proportions)</span>
+      <span class="swatch"><span class="swatch-dot measured"></span> Measured</span>
+      <span class="swatch"><span class="swatch-dot partial"></span> Partially measured</span>
+      <span class="swatch"><span class="swatch-dot estimated"></span> Estimated (average proportions)</span>
     </div>
     <div class="scale-note" id="scale-note"></div>
   </section>
@@ -130,5 +139,6 @@
 </footer>
 
 <script src="app.js"></script>
+<script type="module" src="body3d.js"></script>
 </body>
 </html>

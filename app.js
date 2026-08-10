@@ -115,6 +115,7 @@ function populateInputs() {
   document.getElementById("fit-type").value = state.fitType;
   document.getElementById("fit-ease").value = state.fitEase;
   updateFitFieldVisibility();
+  updatePlaceholders();
 }
 
 function bindInputs() {
@@ -239,6 +240,25 @@ function effectiveMeasurements() {
   return out;
 }
 
+// How much of a body region is backed by real input vs filled in from
+// FALLBACK_RATIO — drives the measured/partial/estimated styling in the SVG.
+function segmentState(keys) {
+  const measured = keys.filter((k) => state.measurements[k] != null).length;
+  if (measured === keys.length) return "measured";
+  if (measured === 0) return "estimated";
+  return "partial";
+}
+
+function updatePlaceholders() {
+  const H = state.measurements.height || 170;
+  const heightEl = document.getElementById("m-height");
+  heightEl.placeholder = `avg ${cmToDisplay(170)}`;
+  FIELDS.forEach(({ key, id }) => {
+    if (key === "height") return;
+    document.getElementById(id).placeholder = `≈ ${cmToDisplay(FALLBACK_RATIO[key] * H)}`;
+  });
+}
+
 /* ---------------------------------------------------------------------
  * SVG figure
  * ------------------------------------------------------------------- */
@@ -302,6 +322,11 @@ function renderBody() {
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${VB_W} ${VB_H}`);
 
+  const legsState = segmentState(["hip", "inseam", "thigh", "calf", "ankle"]);
+  const armsState = segmentState(["sleeve", "bicep", "wrist"]);
+  const torsoState = segmentState(["shoulder", "chest", "waist", "hip"]);
+  const neckState = segmentState(["neck"]);
+
   // guide: floor line
   svg.appendChild(el("line", { x1: MARGIN, y1: yFloor, x2: VB_W - MARGIN, y2: yFloor, class: "body-guide" }));
 
@@ -317,7 +342,7 @@ function renderBody() {
       [cxLeg - ankleW / 2 * (side < 0 ? 1 : 0.15), yFloor],
       [cxLeg - calfW / 2 * (side < 0 ? 1 : 0.15), yCalf],
     ];
-    svg.appendChild(poly(pts, "body-shape secondary"));
+    svg.appendChild(poly(pts, `body-shape secondary state-${legsState}`));
   });
 
   // arms
@@ -331,7 +356,7 @@ function renderBody() {
       [shoulderX + side * drift + wristW / 2, yShoulder + armLenPx],
       [shoulderX + side * drift - wristW / 2, yShoulder + armLenPx],
     ];
-    svg.appendChild(poly(pts, "body-shape secondary"));
+    svg.appendChild(poly(pts, `body-shape secondary state-${armsState}`));
   });
 
   // torso
@@ -345,7 +370,7 @@ function renderBody() {
     [cx + chestW / 2, yChest],
     [cx + shoulderW / 2, yShoulder],
   ];
-  svg.appendChild(poly(torsoPts, "body-shape"));
+  svg.appendChild(poly(torsoPts, `body-shape state-${torsoState}`));
 
   // neck
   svg.appendChild(poly([
@@ -353,15 +378,16 @@ function renderBody() {
     [cx + neckW / 2, yHeadBottom],
     [cx + shoulderW * 0.18, yShoulder],
     [cx - shoulderW * 0.18, yShoulder],
-  ], "body-shape"));
+  ], `body-shape state-${neckState}`));
 
   // head
   svg.appendChild(el("circle", {
     cx, cy: (yHeadTop + yHeadBottom) / 2, r: Math.max(headR, 10), class: "body-shape",
   }));
 
+  const measuredCount = FIELDS.filter((f) => f.key !== "height" && state.measurements[f.key] != null).length;
   document.getElementById("scale-note").textContent =
-    `Figure height ≈ ${fmt(totalCm)} at current inputs (defaults fill any blank field).`;
+    `Figure height ≈ ${fmt(totalCm)} · ${measuredCount}/${FIELDS.length - 1} measurements entered — the rest are filled with average-proportion estimates and update instantly as you add real numbers.`;
 }
 
 /* ---------------------------------------------------------------------
@@ -632,6 +658,7 @@ function renderFitChecker() {
  * Main render
  * ------------------------------------------------------------------- */
 function renderAll() {
+  updatePlaceholders();
   renderBody();
   renderRatios();
   renderSizes();

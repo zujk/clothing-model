@@ -195,8 +195,7 @@ class Store(
 
     private fun JSONObject.copy() = JSONObject(toString())
 
-    private fun key(s: String) = s.trim().lowercase()
-    private fun String.key() = key(this)
+    private fun String.key() = trim().lowercase()
 
     private fun mutate(block: () -> Unit) {
         synchronized(lock) {

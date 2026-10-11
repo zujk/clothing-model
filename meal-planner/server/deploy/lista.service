@@ -1,0 +1,20 @@
+[Unit]
+Description=Lista Spesa & Menù sync server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/env node /opt/lista/server.js
+EnvironmentFile=/etc/lista/env
+# listens on localhost only; Caddy/nginx terminates HTTPS in front of it
+Environment=HOST=127.0.0.1
+DynamicUser=yes
+StateDirectory=lista
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

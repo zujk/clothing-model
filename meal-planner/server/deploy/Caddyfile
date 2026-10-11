@@ -1,0 +1,11 @@
+# Caddy gets and renews the HTTPS certificate by itself.
+# The app only talks to /api/*, so this can live alongside an existing site on the domain.
+cookingstamina.com {
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3000 {
+			# long-poll requests wait up to ~25 s; don't buffer them
+			flush_interval -1
+		}
+	}
+	# ...your existing site config (if any) goes here
+}

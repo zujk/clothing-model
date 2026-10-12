@@ -4,6 +4,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+NODE=$(command -v node || true)
+if [ -z "$NODE" ] || [ "$("$NODE" -p 'process.versions.node.split(".")[0]')" -lt 18 ]; then
+  echo "Node 18+ is required. Install it first, e.g.:" >&2
+  echo "  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs" >&2
+  exit 1
+fi
+NODE=$(readlink -f "$NODE")
+
 install -d /opt/lista /etc/lista
 install -m 644 server.js package.json /opt/lista/
 
@@ -14,7 +22,8 @@ if [ ! -f /etc/lista/env ]; then
   echo "Created household key: $KEY   (kept in /etc/lista/env)"
 fi
 
-install -m 644 deploy/lista.service /etc/systemd/system/lista.service
+sed "s|@NODE@|$NODE|" deploy/lista.service > /etc/systemd/system/lista.service
+chmod 644 /etc/systemd/system/lista.service
 systemctl daemon-reload
 systemctl enable lista >/dev/null
 systemctl restart lista

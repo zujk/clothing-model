@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
 
         // Pre-filled on the setup screen; can be edited in the app.
-        buildConfigField("String", "DEFAULT_SERVER", "\"https://cookingstamina.com\"")
+        buildConfigField("String", "DEFAULT_SERVER", "\"https://cookingbyamina.com/lista\"")
     }
 
     buildFeatures {

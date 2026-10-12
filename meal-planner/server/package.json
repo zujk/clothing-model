@@ -1,0 +1,9 @@
+{
+  "name": "lista-spesa-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tiny sync server for the Lista Spesa & Menù app",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "engines": { "node": ">=18" }
+}

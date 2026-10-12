@@ -1,11 +1,14 @@
-# Caddy gets and renews the HTTPS certificate by itself.
-# The app only talks to /api/*, so this can live alongside an existing site on the domain.
-cookingstamina.com {
-	handle /api/* {
+# ADD the handle_path block below INSIDE your existing cookingbyamina.com { ... } block,
+# above the line "reverse_proxy 127.0.0.1:8000". Do not replace your Caddyfile.
+# Then: sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+
+cookingbyamina.com, www.cookingbyamina.com {
+	# --- Lista Spesa & Menù sync server (the app talks to https://cookingbyamina.com/lista) ---
+	handle_path /lista/* {
 		reverse_proxy 127.0.0.1:3000 {
 			# long-poll requests wait up to ~25 s; don't buffer them
 			flush_interval -1
 		}
 	}
-	# ...your existing site config (if any) goes here
+	# --- your existing site config continues here (reverse_proxy 127.0.0.1:8000 etc.) ---
 }
